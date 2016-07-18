@@ -53,7 +53,21 @@
 We present a method for robust high-speed quadrotor flight through unknown cluttered environments using a fast approximation of collision probabilities. Motivated by experiments in which the difficulty of accurate state estimation was a primary limitation on speed, our method forgoes maintaining a map in favor of using only instantaneous depth information in the local frame. This provides robustness in the presence of significant state estimate uncertainty. Additionally, we present approximation methods augmented with spatial partitioning data structures that enable low-latency, real-time reactive control. The probabilistic formulation provides a natural way to integrate reactive obstacle avoidance with arbitrary navigation objectives. We validate the method using a simulated quadrotor race through a forest at high speeds in the presence of increasing state estimate noise. We pair our method with an MPC-based motion primitive library and compare with a global path-generation and path-following approach.
 \end{abstract}
 
-%\section{Introduction}
+\section{Introduction}
+
+A primary challenge in improving robot performance is to increase robustness in regimes of fast motion, proximity to obstacles, and significant difficulty of estimating state.  A robotics platform that is at the center of all of these challenges is a quadrotor UAV navigating quickly through unknown yet cluttered environments.  Although significant steps have been made, the goal of autonomous, robust, agile flight in highly cluttered environments remains an open problem.
+
+A traditional method of approaching the autonomous navigation problem is to build a global or semi-local map, and planning an optimal path or trajectory, coupled with close feedback control along a planned trajectory.  These methods perform well in regimes where accurate state estimates are available, for example with motion capture or global positioning systems (GPS).  They are particularly fragile, however, when exposed to significant state estimate uncertainty, causing mapping and tracking to fail.  Additionally, the high computational cost of maintaining a globally consistent map along with the associated latencies yields reaction times that are not amenable to high speed flight in clutter.
+
+At the other end of the spectrum, reactive control approaches that do not rely on maps are inherently low-latency and have been demonstrated to provide notable performance in obstacle avoidance.  Reactive methods, however, suffer their own failings of being short-sighted and thus are generally unable to perform complex exploration tasks that require longer planning horizons.  Additionally, many reactive approaches do not consider dynamics, and so may not capture the subtleties of motion required for robust navigation.
+
+A key insight we explore in this paper is that we can estimate the probability of collision for any action without even building a locally consistent map.  We use a fast method for estimating collision probabilities in the local frame based on a simplified dynamical model that depends only on instantaneous depth sensor information. This method offers a mapless collision avoidance approach that rigorously considers robustness, is amenable to low-latency implementations, and integrates seamlessly with arbitrary navigation objectives.  
+
+
+%It is not that we do not think there is a need for maps.  When dead-ends and bugtraps are involved, reactive control alone will not work, and maps are one route to solving the navigation problem.  
+
+
+
 %
 %Fair amount of people have done obstacle avoidance in a local frame.  What we do is not even build a map.  If we use only the instantaneous depth information, and figure out a smart way to impose soft costs, then we won't even need a map. The question is how to do that soft cost.  The key we have found is to evaluate maneuvers and consider uncertainty.  One way to think about this method is a reactive controller that involves rigorous state-space design.  Shares the property of reactive controllers of being memoryless, and shares the property of robust planning approaches of considering uncertainty together with a state-space dynamics model. At slow speeds, it's not optimal.  Like other reactive-type approaches, it may be short-sighted at least without proper tuning.  We still think maps are important.  When dead-ends and bugtraps are involved, a reactive controller will not work, and maps are one route to solving the navigation problem.  At slower speeds, with less dynamic locomotion regimes, building maps is feasible.
 %
@@ -300,11 +314,11 @@ If the future robot position is not occluded, we can approximate the probability
 where $\Sigma_r$ is the covariance of the robot position.  This approximation has been used in the chance-constrained programming literature, where the probability of collision at any time is upper bounded as a constraint in an optimization.   Here, we instead use this equation to form an approximation of the collision probability for a whole trajectory, and only perform evaluation-and-selection rather than optimization.  The above equation is used together with Equation \ref{prob_whole_trajectory} to evaluate probabilities of collision for all the maneuvers in the library. 
 
 For our quadrotor race through the forest, since the obstacles are all convex and so navigating out of dead-ends is not a concern, we use a simple Euclidean progress metric as our navigation function $R_{nav}$, plus a cost on terminal velocity:
-
+%
 \begin{equation}
 R_{nav}(\mathcal{M}_i) = ||\mathbf{p}_0 - \mathbf{p}_{goal}|| - ||\mathbf{p}_i(t_f) - \mathbf{p}_{goal}|| + k || \mathbf{v}_i(t_f)||
 \end{equation}
-
+%
 Where we used $k=10$, and $R_{collision} = -10,000$.
 
 %For efficient implementation, all robot trajectories are computed directly in the Cartesian depth image optical frame (which is right-down-forward, in the computer vision convention, and rotated with the camera).  
